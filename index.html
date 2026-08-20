@@ -39,8 +39,13 @@
                         <i class="fa-solid font-bold text-2xl fa-user-nurse"></i>
                     </div>
                     <div>
-                        <h1 class="font-bold text-lg md:text-xl leading-tight tracking-wide">有料老人ホームくすの木</h1>
-                        <p class="text-xs text-emerald-200">新人教育進捗管理・業務サポートシステム</p>
+                        <div class="flex items-center space-x-2.5 flex-wrap">
+                            <h1 class="font-bold text-lg md:text-xl leading-tight tracking-wide">有料老人ホームくすの木</h1>
+                            <span class="bg-emerald-950/80 text-amber-300 font-bold px-3 py-0.5 rounded-full text-xs border border-emerald-600/80 flex items-center shadow-inner">
+                                <i class="fa-regular fa-calendar-days mr-1.5 text-amber-400"></i>{{ formattedToday }}
+                            </span>
+                        </div>
+                        <p class="text-xs text-emerald-200 mt-0.5">新人教育進捗管理・業務サポートシステム</p>
                     </div>
                 </div>
 
@@ -65,6 +70,13 @@
                         </button>
                     </div>
 
+                    <!-- Guidance Schedule Manager Button (Always visible / Auth protected) -->
+                    <button @click="openInstructorScheduleModal" 
+                            class="bg-indigo-700 hover:bg-indigo-600 active:scale-95 text-white px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center shadow-sm border border-indigo-400/50"
+                            title="指導担当者の月間シフトスケジュール設定">
+                        <i class="fa-regular fa-calendar-check text-amber-300 mr-1.5 text-base"></i> 指導担当スケジュール設定
+                    </button>
+
                     <button @click="showConfigModal = true" 
                             class="bg-emerald-700 hover:bg-emerald-600 active:scale-95 text-white px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center shadow-sm"
                             title="GAS・データ保存設定">
@@ -82,6 +94,9 @@
                     </button>
                     <div v-else class="flex items-center space-x-2 bg-indigo-900 px-3 py-1.5 rounded-xl border border-indigo-500 shadow-sm">
                         <span class="text-xs font-bold text-indigo-100"><i class="fa-solid fa-user-shield text-amber-400 mr-1"></i> 管理者画面</span>
+                        <button @click="showInstructorScheduleModal = true" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-2.5 py-1 rounded-lg transition shadow-xs flex items-center">
+                            <i class="fa-regular fa-calendar-alt mr-1 text-amber-300"></i> 指導者スケジュール設定
+                        </button>
                         <button @click="isAdmin = false" class="text-xs bg-slate-700 hover:bg-slate-600 text-white font-bold px-2.5 py-1 rounded-lg transition shadow-xs flex items-center">
                             <i class="fa-solid fa-right-from-bracket mr-1"></i> ログアウト
                         </button>
@@ -129,14 +144,43 @@
                             研修終了予定: {{ estimatedCompletionDate }}
                         </div>
 
+                        <!-- Compact Today's Instructor Badge (View / Edit Mode) -->
+                        <div v-if="!isEditingTodayInstructor" class="bg-indigo-50/90 text-indigo-950 border border-indigo-200 px-3 py-1 rounded-full text-xs font-bold flex items-center space-x-1.5 shadow-2xs">
+                            <i class="fa-solid fa-user-ninja text-indigo-600"></i>
+                            <span>本日の指導担当:</span>
+                            <span class="text-indigo-900 font-extrabold text-xs sm:text-sm ml-0.5">{{ getTodayInstructorName() || '未設定' }}</span>
+                            <button @click="isEditingTodayInstructor = true" 
+                                    class="text-indigo-700 hover:text-indigo-900 bg-white hover:bg-indigo-100 px-2 py-0.5 rounded-md border border-indigo-300 text-[11px] font-bold transition flex items-center ml-1 shadow-2xs">
+                                <i class="fa-solid fa-pen-to-square mr-1"></i>編集
+                            </button>
+                        </div>
+
+                        <div v-else class="bg-indigo-50/90 text-indigo-950 border border-indigo-300 px-3 py-1 rounded-full text-xs font-bold flex items-center space-x-1.5 shadow-2xs">
+                            <i class="fa-solid fa-user-ninja text-indigo-600"></i>
+                            <span>本日の指導担当:</span>
+                            <input type="text" 
+                                   :value="getTodayInstructorName()" 
+                                   @input="setTodayInstructorName($event.target.value)" 
+                                   @keyup.enter="isEditingTodayInstructor = false"
+                                   placeholder="名前を入力" 
+                                   class="w-28 bg-white border border-indigo-400 rounded-lg px-2 py-0.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500">
+                            <button @click="isEditingTodayInstructor = false" 
+                                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-0.5 rounded-md text-[11px] font-bold shadow-2xs transition">
+                                完了
+                            </button>
+                        </div>
+
                         <button v-if="isAdmin" @click="openStaffModal(currentStaff)" class="text-xs text-indigo-600 hover:text-indigo-800 font-bold underline ml-1">
                             [設定・編集]
                         </button>
                     </div>
 
-                    <!-- Admin Add Staff Button -->
-                    <div v-if="isAdmin" class="flex items-center">
-                        <button @click="openStaffModal(null)" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm transition">
+                    <!-- Admin Add Staff & Schedule Buttons -->
+                    <div v-if="isAdmin" class="flex items-center space-x-2 flex-wrap gap-y-1">
+                        <button @click="openInstructorScheduleModal" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm transition flex items-center">
+                            <i class="fa-regular fa-calendar-alt mr-1.5"></i> 📅 指導担当スケジュール設定
+                        </button>
+                        <button @click="openStaffModal(null)" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm transition flex items-center">
                             <i class="fa-solid fa-user-plus mr-1"></i> ＋ 新人スタッフ追加
                         </button>
                     </div>
@@ -211,7 +255,7 @@
                                     <!-- 編集モード -->
                                     <div v-else class="mt-2 space-y-2">
                                         <textarea v-model="tempFocusTopic" rows="2" 
-                                                  placeholder="例: 移乗介助時のボディメカニクス意識と、事前・実施時の声掛け徹底" 
+                                                  placeholder="" 
                                                   class="w-full text-xs bg-white border border-indigo-300 rounded-xl p-2.5 font-bold focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
                                         <div class="flex space-x-2 justify-end">
                                             <button @click="isEditingFocusTopic = false" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs px-3 py-1.5 rounded-xl transition">
@@ -275,14 +319,6 @@
 
                                 <!-- Right: Controls & Checkboxes -->
                                 <div class="flex items-center space-x-2 sm:space-x-2.5 shrink-0 self-end md:self-center flex-wrap gap-y-1.5">
-                                    <!-- Item Note Trigger Button -->
-                                    <button @click="toggleNoteEditor(item.id)" 
-                                            :class="['text-xs px-2.5 py-1.5 rounded-xl border font-bold transition flex items-center shadow-2xs',
-                                                     getItemNote(item.id) ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100']">
-                                        <i class="fa-regular fa-comment-dots mr-1" :class="getItemNote(item.id) ? 'text-amber-600' : 'text-slate-500'"></i>
-                                        <span>{{ getItemNote(item.id) ? '未達成メモあり' : 'メモ追加' }}</span>
-                                    </button>
-
                                     <!-- Guide Modal Trigger -->
                                     <button @click="openGuideModal(item)" 
                                             class="text-xs text-emerald-800 bg-emerald-50 hover:bg-emerald-100 active:scale-95 px-2.5 py-1.5 rounded-xl border border-emerald-200 font-bold transition flex items-center shadow-2xs">
@@ -319,40 +355,23 @@
                                 </div>
                             </div>
 
-                            <!-- Display Mode for Item Unachieved Note -->
-                            <div v-if="getItemNote(item.id) && editingNoteItemId !== item.id" 
-                                 class="bg-amber-50/90 text-amber-950 border border-amber-200/90 px-3.5 py-2 rounded-xl text-xs font-medium flex items-center justify-between shadow-2xs">
-                                <div class="flex items-start space-x-2">
-                                    <i class="fa-solid fa-comment-dots text-amber-600 text-sm mt-0.5 shrink-0"></i>
-                                    <div>
-                                        <strong class="font-bold text-amber-900">未達成内容・指導特記事項:</strong>
-                                        <span class="ml-1 leading-relaxed">{{ getItemNote(item.id) }}</span>
-                                    </div>
-                                </div>
-                                <button @click="openNoteEditor(item.id)" class="text-indigo-600 hover:text-indigo-800 text-[11px] font-bold ml-2 shrink-0 underline">
-                                    編集
-                                </button>
+                            <!-- Item Unachieved Note Section (Admin Edit Mode / General User View Only) -->
+                            <div v-if="isAdmin" class="pt-1 flex flex-col sm:flex-row sm:items-center gap-2 bg-slate-50/90 p-2.5 rounded-xl border border-slate-200/90">
+                                <label class="text-xs font-bold text-slate-700 whitespace-nowrap flex items-center shrink-0">
+                                    <i class="fa-regular fa-comment-dots text-amber-600 mr-1.5"></i>未達成内容・指導メモ (管理者編集):
+                                </label>
+                                <input type="text" 
+                                       :value="getItemNote(item.id)" 
+                                       @input="updateItemNote(item.id, $event.target.value)" 
+                                       placeholder="" 
+                                       class="flex-1 text-xs bg-white border border-slate-300 rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-slate-800">
                             </div>
 
-                            <!-- Edit Mode for Item Unachieved Note -->
-                            <div v-if="editingNoteItemId === item.id" class="bg-indigo-50/80 p-3 rounded-xl border border-indigo-200 space-y-2 text-xs shadow-2xs">
-                                <div class="flex justify-between items-center font-bold text-indigo-950">
-                                    <span><i class="fa-solid fa-pen-to-square text-indigo-600 mr-1.5"></i>この研修項目の未達成内容・個別課題メモ（入力保存できます）:</span>
-                                    <button @click="editingNoteItemId = null" class="text-slate-400 hover:text-slate-600 font-bold text-sm">&times;</button>
-                                </div>
-                                <textarea v-model="tempNoteText" rows="2" 
-                                          placeholder="例: 移乗介助時の浅座り位置調整が不十分。事前・動作時の声掛けタイミングを練習中。" 
-                                          class="w-full text-xs bg-white border border-indigo-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-indigo-500"></textarea>
-                                <div class="flex space-x-2 justify-end">
-                                    <button v-if="getItemNote(item.id)" @click="clearItemNote(item.id)" class="text-rose-600 hover:text-rose-800 font-bold px-2 py-1">
-                                        メモを削除
-                                    </button>
-                                    <button @click="editingNoteItemId = null" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-3 py-1.5 rounded-xl transition">
-                                        キャンセル
-                                    </button>
-                                    <button @click="saveItemNote(item.id)" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-1.5 rounded-xl shadow-xs transition">
-                                        <i class="fa-solid fa-check mr-1"></i> メモを保存
-                                    </button>
+                            <div v-else-if="getItemNote(item.id)" class="pt-1 flex items-start space-x-2 bg-amber-50/70 p-2.5 rounded-xl border border-amber-200/80 text-xs">
+                                <i class="fa-regular fa-comment-dots text-amber-600 mt-0.5 shrink-0"></i>
+                                <div class="leading-relaxed">
+                                    <strong class="font-bold text-amber-950 mr-1">未達成内容・指導メモ:</strong>
+                                    <span class="text-slate-800 font-medium">{{ getItemNote(item.id) }}</span>
                                 </div>
                             </div>
                         </div>
@@ -378,11 +397,11 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                                 <div>
                                     <label class="block font-bold text-slate-700 mb-1">項目名（達成できなかった課題名など） *</label>
-                                    <input type="text" v-model="newCustomTitle" placeholder="例: 前月未達成の排泄介助（おむつ交換手順）の習得" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-bold focus:ring-2 focus:ring-indigo-500">
+                                    <input type="text" v-model="newCustomTitle" placeholder="" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-bold focus:ring-2 focus:ring-indigo-500">
                                 </div>
                                 <div>
                                     <label class="block font-bold text-slate-700 mb-1">詳細・指導補足メモ（任意）</label>
-                                    <input type="text" v-model="newCustomDesc" placeholder="例: 陰部洗浄の手順、声掛けとプライバシー配慮の徹底" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-indigo-500">
+                                    <input type="text" v-model="newCustomDesc" placeholder="" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 font-medium focus:ring-2 focus:ring-indigo-500">
                                 </div>
                             </div>
                             <div class="flex space-x-2 justify-end pt-1">
@@ -423,7 +442,7 @@
 
                             <div>
                                 <textarea v-model="rookieCommentInput" rows="3" 
-                                          placeholder="例: 移乗介助の際、足の位置決めとタイミング合わせがまだ少し不安です。" 
+                                          placeholder="" 
                                           class="w-full text-xs bg-white border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium"></textarea>
                             </div>
 
@@ -447,7 +466,7 @@
 
                             <div>
                                 <textarea v-model="trainerCommentInput" rows="3" 
-                                          placeholder="例: 声掛けが大変丁寧でした。明日の日勤同行時にスライディング動作を練習予定。" 
+                                          placeholder="" 
                                           class="w-full text-xs bg-white border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 font-medium"></textarea>
                             </div>
 
@@ -608,6 +627,60 @@
                                             </div>
                                             <p class="text-slate-800 leading-relaxed font-medium whitespace-pre-wrap">{{ c.content }}</p>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Admin Curriculum Progress & Item Note Direct Editor Section -->
+                        <div class="space-y-4 pt-4 border-t border-slate-200">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <h4 class="font-bold text-slate-800 text-sm flex items-center">
+                                    <i class="fa-solid fa-list-check text-amber-600 mr-2"></i>
+                                    【管理者直接編集】研修項目 ＆ 未達成内容・指導メモ
+                                </h4>
+                                <!-- Month Selector Tabs -->
+                                <div class="flex bg-slate-100 p-1 rounded-xl gap-1 shrink-0">
+                                    <button v-for="m in [1, 2, 3]" :key="m"
+                                            @click="activeMonth = m"
+                                            :class="['px-3 py-1 text-xs font-bold rounded-lg transition',
+                                                     activeMonth === m ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200']">
+                                        {{ m }}ヶ月目
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Curriculum Items Grid for Selected Month -->
+                            <div class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                                <div v-for="item in currentMonthItems" :key="item.id"
+                                     class="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200 space-y-2 text-xs">
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/80 pb-2">
+                                        <div class="font-bold text-slate-800 text-xs sm:text-sm flex items-center space-x-2">
+                                            <span class="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded text-[10px] font-mono">No.{{ item.id }}</span>
+                                            <span>{{ item.title }}</span>
+                                        </div>
+                                        <div class="flex items-center space-x-3 text-[11px] font-bold">
+                                            <label class="flex items-center space-x-1 cursor-pointer">
+                                                <input type="checkbox" :checked="getCheckState(item.id, 'staff')" @change="toggleCheck(item.id, 'staff')" class="rounded text-blue-600 focus:ring-blue-500">
+                                                <span class="text-blue-800">本人OK</span>
+                                            </label>
+                                            <label class="flex items-center space-x-1 cursor-pointer">
+                                                <input type="checkbox" :checked="getCheckState(item.id, 'trainer')" @change="toggleCheck(item.id, 'trainer')" class="rounded text-emerald-600 focus:ring-emerald-500">
+                                                <span class="text-emerald-800">指導OK</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <!-- Direct Item Note Input in Admin Dashboard -->
+                                    <div class="flex flex-col sm:flex-row sm:items-center gap-2 pt-1">
+                                        <label class="font-bold text-amber-900 shrink-0 flex items-center text-[11px]">
+                                            <i class="fa-regular fa-comment-dots text-amber-600 mr-1"></i>未達成内容・指導メモ:
+                                        </label>
+                                        <input type="text" 
+                                               :value="getItemNote(item.id)" 
+                                               @input="updateItemNote(item.id, $event.target.value)" 
+                                               placeholder="未達成の課題や指導上の注意点を入力" 
+                                               class="flex-1 bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-amber-500">
                                     </div>
                                 </div>
                             </div>
@@ -788,7 +861,7 @@
                 <div class="space-y-3 text-xs">
                     <div>
                         <label class="block font-bold text-slate-700 mb-1">お名前 *</label>
-                        <input type="text" v-model="editingStaff.name" placeholder="例: 山田 太郎" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5">
+                        <input type="text" v-model="editingStaff.name" placeholder="" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5">
                     </div>
 
                     <div>
@@ -911,6 +984,76 @@
             </div>
         </div>
 
+        <!-- Instructor Schedule Config Modal -->
+        <div v-if="showInstructorScheduleModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full p-6 space-y-4 border border-slate-200 max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center border-b pb-3">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-base flex items-center">
+                            <i class="fa-regular fa-calendar-alt text-indigo-600 mr-2 text-lg"></i>
+                            【管理者機能】月間OJT指導担当者スケジュール設定
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-0.5">シフト表に合わせて、日付ごとの指導担当スタッフ名を事前入力できます</p>
+                    </div>
+                    <button @click="showInstructorScheduleModal = false" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+
+                <div class="space-y-4 text-xs">
+                    <div class="flex items-center justify-between bg-indigo-50 p-3 rounded-xl border border-indigo-200">
+                        <div class="font-bold text-indigo-950">
+                            対象新人: <span class="text-indigo-700 font-extrabold text-sm ml-1">{{ currentStaff.name }}</span>
+                        </div>
+                        <div class="text-xs font-bold text-slate-600">
+                            入社日: {{ currentStaff.startDate || '未設定' }}
+                        </div>
+                    </div>
+
+                    <!-- Month Selector Tabs in Schedule Modal -->
+                    <div class="flex bg-indigo-100/70 p-1 rounded-xl gap-1">
+                        <button v-for="m in [1, 2, 3]" :key="m"
+                                @click="scheduleActiveMonth = m"
+                                :class="['flex-1 py-2 text-xs font-bold rounded-lg transition flex items-center justify-center space-x-1.5',
+                                         scheduleActiveMonth === m ? 'bg-indigo-600 text-white shadow-xs' : 'text-indigo-900 hover:bg-indigo-200/60']">
+                            <span>{{ m }}ヶ月目</span>
+                            <span class="text-[10px] opacity-80">({{ (m-1)*30 + 1 }}〜{{ m*30 }}日目)</span>
+                        </button>
+                    </div>
+
+                    <div class="space-y-2">
+                        <div class="font-bold text-slate-700 flex justify-between items-center">
+                            <span>{{ scheduleActiveMonth }}ヶ月目の日別指導担当者入力（30日間）</span>
+                            <span class="text-[11px] text-slate-500 font-normal">※入力した瞬間に自動保存されます</span>
+                        </div>
+
+                        <!-- Dates Grid List -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 max-h-[50vh] overflow-y-auto p-1">
+                            <div v-for="d in getMonthDates" :key="d.dateStr" 
+                                 :class="['p-2.5 rounded-xl border flex flex-col space-y-1.5 transition', 
+                                          d.isWeekend ? 'bg-amber-50/50 border-amber-200' : 'bg-slate-50 border-slate-200']">
+                                <div class="flex justify-between items-center font-bold">
+                                    <span :class="d.isWeekend ? 'text-amber-900' : 'text-slate-700'">
+                                        {{ d.dayNum }}日目: {{ d.displayLabel }}
+                                    </span>
+                                    <span v-if="d.dateStr === getTodayStr()" class="px-1.5 py-0.5 rounded text-[9px] bg-indigo-600 text-white font-bold">本日</span>
+                                </div>
+                                <input type="text" 
+                                       :value="getInstructorForDate(d.dateStr)" 
+                                       @input="setInstructorForDate(d.dateStr, $event.target.value)" 
+                                       placeholder="指導者名（例: 佐藤）" 
+                                       class="w-full bg-white border border-slate-300 rounded-lg p-1.5 font-bold text-xs focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end pt-3 border-t">
+                    <button @click="showInstructorScheduleModal = false" class="px-5 py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition">
+                        設定を完了して閉じる
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <footer class="bg-slate-800 text-slate-400 py-4 text-center text-xs mt-auto">
             有料老人ホームくすの木 介護新人教育進捗管理システム &copy; 2026
         </footer>
@@ -1010,28 +1153,138 @@
                     editingNoteItemId.value = itemId;
                     tempNoteText.value = getItemNote(itemId);
                 };
-
-                const toggleNoteEditor = (itemId) => {
-                    if (editingNoteItemId.value === itemId) {
-                        editingNoteItemId.value = null;
+                const updateItemNote = (itemId, val) => {
+                    const key = `${selectedStaffId.value}_${itemId}`;
+                    if (val && val.trim()) {
+                        itemNotesStore.value[key] = val;
                     } else {
-                        openNoteEditor(itemId);
+                        delete itemNotesStore.value[key];
+                    }
+                    autoSaveDebounce();
+                };
+
+                // Instructor schedule store: { `${staffId}_${dateKey}`: string }
+                const instructorScheduleStore = ref({
+                    '1_2026-04-01': '佐藤 介護士',
+                    '1_2026-04-02': '鈴木 介護士',
+                    '1_2026-04-03': '高橋 介護士'
+                });
+                const showInstructorScheduleModal = ref(false);
+                const scheduleActiveMonth = ref(1);
+                const isEditingTodayInstructor = ref(false);
+
+                const getTodayStr = () => {
+                    const d = new Date();
+                    const yyyy = d.getFullYear();
+                    const mm = String(d.getMonth() + 1).padStart(2, '0');
+                    const dd = String(d.getDate()).padStart(2, '0');
+                    return `${yyyy}-${mm}-${dd}`;
+                };
+
+                const getTodayInstructorName = () => {
+                    if (!selectedStaffId.value) return '';
+                    const todayStr = getTodayStr();
+                    const key = `${selectedStaffId.value}_${todayStr}`;
+                    if (instructorScheduleStore.value[key]) {
+                        return instructorScheduleStore.value[key];
+                    }
+                    const activeKey = `${selectedStaffId.value}_active_today`;
+                    return instructorScheduleStore.value[activeKey] || '';
+                };
+
+                const setTodayInstructorName = (nameVal) => {
+                    if (!selectedStaffId.value) return;
+                    const todayStr = getTodayStr();
+                    const key = `${selectedStaffId.value}_${todayStr}`;
+                    const activeKey = `${selectedStaffId.value}_active_today`;
+                    instructorScheduleStore.value[key] = nameVal;
+                    instructorScheduleStore.value[activeKey] = nameVal;
+                    autoSaveDebounce();
+                };
+
+                const getInstructorForDate = (dateStr) => {
+                    if (!selectedStaffId.value || !dateStr) return '';
+                    const key = `${selectedStaffId.value}_${dateStr}`;
+                    return instructorScheduleStore.value[key] || '';
+                };
+
+                const setInstructorForDate = (dateStr, nameVal) => {
+                    if (!selectedStaffId.value || !dateStr) return;
+                    const key = `${selectedStaffId.value}_${dateStr}`;
+                    if (nameVal && nameVal.trim()) {
+                        instructorScheduleStore.value[key] = nameVal.trim();
+                    } else {
+                        delete instructorScheduleStore.value[key];
+                    }
+                    autoSaveDebounce();
+                };
+
+                const formattedToday = computed(() => {
+                    const d = new Date();
+                    const yyyy = d.getFullYear();
+                    const mm = d.getMonth() + 1;
+                    const dd = d.getDate();
+                    const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][d.getDay()];
+                    return `${yyyy}年${mm}月${dd}日 (${dayOfWeek})`;
+                });
+
+                const pendingModalToOpen = ref(null);
+
+                const openAdminAuthModal = () => {
+                    showAdminAuthModal.value = true;
+                };
+
+                const verifyAdminPasscode = () => {
+                    if (adminPasscode.value === '147123') {
+                        isAdmin.value = true;
+                        showAdminAuthModal.value = false;
+                        adminPasscode.value = '';
+                        if (pendingModalToOpen.value === 'instructorSchedule') {
+                            scheduleActiveMonth.value = activeMonth.value;
+                            showInstructorScheduleModal.value = true;
+                            pendingModalToOpen.value = null;
+                        }
+                    } else {
+                        alert('パスコードが正しくありません。');
                     }
                 };
 
-                const saveItemNote = (itemId) => {
-                    const key = `${selectedStaffId.value}_${itemId}`;
-                    itemNotesStore.value[key] = tempNoteText.value.trim();
-                    editingNoteItemId.value = null;
-                    autoSaveDebounce();
+                const openInstructorScheduleModal = () => {
+                    if (!isAdmin.value) {
+                        pendingModalToOpen.value = 'instructorSchedule';
+                        openAdminAuthModal();
+                        return;
+                    }
+                    scheduleActiveMonth.value = activeMonth.value;
+                    showInstructorScheduleModal.value = true;
                 };
 
-                const clearItemNote = (itemId) => {
-                    const key = `${selectedStaffId.value}_${itemId}`;
-                    delete itemNotesStore.value[key];
-                    editingNoteItemId.value = null;
-                    autoSaveDebounce();
-                };
+                // Helper: Generate list of dates for specified scheduleActiveMonth of current staff
+                const getMonthDates = computed(() => {
+                    if (!currentStaff.value || !currentStaff.value.startDate) return [];
+                    const baseDate = new Date(currentStaff.value.startDate);
+                    if (isNaN(baseDate.getTime())) return [];
+
+                    const targetMonth = scheduleActiveMonth.value || 1;
+                    const offsetDays = (targetMonth - 1) * 30;
+                    const dates = [];
+                    for (let i = 0; i < 30; i++) {
+                        const d = new Date(baseDate);
+                        d.setDate(d.getDate() + offsetDays + i);
+                        const yyyy = d.getFullYear();
+                        const mm = String(d.getMonth() + 1).padStart(2, '0');
+                        const dd = String(d.getDate()).padStart(2, '0');
+                        const dateStr = `${yyyy}-${mm}-${dd}`;
+                        const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][d.getDay()];
+                        dates.push({
+                            dayNum: (targetMonth - 1) * 30 + i + 1,
+                            dateStr: dateStr,
+                            displayLabel: `${mm}/${dd} (${dayOfWeek})`,
+                            isWeekend: d.getDay() === 0 || d.getDay() === 6
+                        });
+                    }
+                    return dates;
+                });
 
                 const isEditingFocusTopic = ref(false);
                 const tempFocusTopic = ref('');
@@ -1058,6 +1311,7 @@
                     isEditingFocusTopic.value = false;
                     showAddCustomForm.value = false;
                     editingNoteItemId.value = null;
+                    isEditingTodayInstructor.value = false;
                 });
 
                 // --- Storage & GAS Sync Functions ---
@@ -1069,6 +1323,7 @@
                         localStorage.setItem('kusunoki_focusTopicsStore', JSON.stringify(focusTopicsStore.value));
                         localStorage.setItem('kusunoki_customItemsStore', JSON.stringify(customItemsStore.value));
                         localStorage.setItem('kusunoki_itemNotesStore', JSON.stringify(itemNotesStore.value));
+                        localStorage.setItem('kusunoki_instructorScheduleStore', JSON.stringify(instructorScheduleStore.value));
                         const nowStr = new Date().toLocaleString('ja-JP');
                         lastSavedTime.value = nowStr;
                         localStorage.setItem('kusunoki_last_save', nowStr);
@@ -1085,12 +1340,14 @@
                         const localFocus = localStorage.getItem('kusunoki_focusTopicsStore');
                         const localCustom = localStorage.getItem('kusunoki_customItemsStore');
                         const localNotes = localStorage.getItem('kusunoki_itemNotesStore');
+                        const localSchedule = localStorage.getItem('kusunoki_instructorScheduleStore');
                         if (localStaff) staffList.value = JSON.parse(localStaff);
                         if (localCheck) checkStore.value = JSON.parse(localCheck);
                         if (localComments) commentsStore.value = JSON.parse(localComments);
                         if (localFocus) focusTopicsStore.value = JSON.parse(localFocus);
                         if (localCustom) customItemsStore.value = JSON.parse(localCustom);
                         if (localNotes) itemNotesStore.value = JSON.parse(localNotes);
+                        if (localSchedule) instructorScheduleStore.value = JSON.parse(localSchedule);
                     } catch (e) {
                         console.error('LocalStorage Load Failed:', e);
                     }
@@ -1117,7 +1374,8 @@
                             commentsStore: commentsStore.value,
                             focusTopicsStore: focusTopicsStore.value,
                             customItemsStore: customItemsStore.value,
-                            itemNotesStore: itemNotesStore.value
+                            itemNotesStore: itemNotesStore.value,
+                            instructorScheduleStore: instructorScheduleStore.value
                         };
 
                         const response = await fetch(gasApiUrl.value, {
@@ -1177,6 +1435,9 @@
                             }
                             if (data.data.itemNotesStore) {
                                 itemNotesStore.value = data.data.itemNotesStore;
+                            }
+                            if (data.data.instructorScheduleStore) {
+                                instructorScheduleStore.value = data.data.instructorScheduleStore;
                             }
                             saveToLocalStorage();
                             saveStatus.value = 'saved';
@@ -1484,21 +1745,6 @@
                     guideModalItem.value = item;
                 };
 
-                // Admin Password Verification
-                const openAdminAuthModal = () => {
-                    adminPasscode.value = '';
-                    showAdminAuthModal.value = true;
-                };
-
-                const verifyAdminPasscode = () => {
-                    if (adminPasscode.value === '147123') {
-                        isAdmin.value = true;
-                        showAdminAuthModal.value = false;
-                    } else {
-                        alert('パスコードが正しくありません');
-                    }
-                };
-
                 // Comment Submission Handlers (Split)
                 const addComment = (authorType, content) => {
                     const now = new Date();
@@ -1684,10 +1930,19 @@
                     editingNoteItemId,
                     tempNoteText,
                     getItemNote,
-                    openNoteEditor,
-                    toggleNoteEditor,
-                    saveItemNote,
-                    clearItemNote
+                    updateItemNote,
+                    instructorScheduleStore,
+                    showInstructorScheduleModal,
+                    getTodayStr,
+                    getTodayInstructorName,
+                    setTodayInstructorName,
+                    getInstructorForDate,
+                    setInstructorForDate,
+                    openInstructorScheduleModal,
+                    getMonthDates,
+                    formattedToday,
+                    scheduleActiveMonth,
+                    isEditingTodayInstructor
                 };
             }
         }).mount('#app');
