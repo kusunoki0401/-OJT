@@ -50,11 +50,25 @@
                 </div>
 
                 <!-- Global Action Header Buttons -->
-                <div class="flex items-center space-x-2 flex-wrap">
+                <!-- General Staff Simple View (Only Workflow & Admin Login) -->
+                <div v-if="!isAdmin" class="flex items-center space-x-2">
+                    <button @click="showWorkflowModal = true" 
+                            class="bg-emerald-700 hover:bg-emerald-600 active:scale-95 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center shadow-sm">
+                        <i class="fa-solid fa-clipboard-list mr-1.5 text-amber-300"></i> 業務フロー
+                    </button>
+
+                    <button @click="openAdminAuthModal" 
+                            class="bg-slate-700 hover:bg-slate-600 active:scale-95 text-slate-100 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center shadow-sm">
+                        <i class="fa-solid fa-user-shield mr-2 text-amber-300"></i> 管理者ログイン
+                    </button>
+                </div>
+
+                <!-- Admin Mode Dedicated Toolbar (Visible only when logged in as Admin) -->
+                <div v-else class="flex items-center space-x-2 flex-wrap gap-y-1">
                     <!-- Save status badge & Manual Sync -->
                     <div class="flex items-center bg-emerald-900/70 px-3 py-1.5 rounded-xl border border-emerald-600/80 text-xs text-emerald-100 space-x-2">
                         <span v-if="saveStatus === 'saved'" class="flex items-center text-emerald-300 font-medium">
-                            <i class="fa-solid fa-cloud-check mr-1.5 text-emerald-400 text-sm"></i> 保存済み
+                            <i class="fa-solid fa-cloud-check mr-1.5 text-emerald-400 text-sm"></i> 自動保存済み
                         </span>
                         <span v-else-if="saveStatus === 'saving'" class="flex items-center text-amber-300 font-medium">
                             <i class="fa-solid fa-spinner fa-spin mr-1.5 text-amber-300 text-sm"></i> 保存中
@@ -70,17 +84,15 @@
                         </button>
                     </div>
 
-                    <!-- Guidance Schedule Manager Button (Always visible / Auth protected) -->
-                    <button @click="openInstructorScheduleModal" 
-                            class="bg-indigo-700 hover:bg-indigo-600 active:scale-95 text-white px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center shadow-sm border border-indigo-400/50"
-                            title="指導担当者の月間シフトスケジュール設定">
-                        <i class="fa-regular fa-calendar-check text-amber-300 mr-1.5 text-base"></i> 指導担当スケジュール設定
+                    <button @click="showInstructorScheduleModal = true" 
+                            class="bg-indigo-700 hover:bg-indigo-600 active:scale-95 text-white px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center shadow-sm border border-indigo-400/50">
+                        <i class="fa-regular fa-calendar-check text-amber-300 mr-1.5 text-base"></i> 指導担当スケジュール
                     </button>
 
                     <button @click="showConfigModal = true" 
                             class="bg-emerald-700 hover:bg-emerald-600 active:scale-95 text-white px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center shadow-sm"
                             title="GAS・データ保存設定">
-                        <i class="fa-solid fa-gear text-amber-300 mr-1.5"></i> 保存設定
+                        <i class="fa-solid fa-gear text-amber-300 mr-1.5"></i> 設定
                     </button>
 
                     <button @click="showWorkflowModal = true" 
@@ -88,19 +100,9 @@
                         <i class="fa-solid fa-clipboard-list mr-1.5 text-amber-300"></i> 業務フロー
                     </button>
 
-                    <button v-if="!isAdmin" @click="openAdminAuthModal" 
-                            class="bg-slate-700 hover:bg-slate-600 active:scale-95 text-slate-100 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center shadow-sm">
-                        <i class="fa-solid fa-user-shield mr-2 text-amber-300"></i> 管理者ログイン
+                    <button @click="isAdmin = false" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center shadow-sm">
+                        <i class="fa-solid fa-right-from-bracket mr-1.5"></i> ログアウト
                     </button>
-                    <div v-else class="flex items-center space-x-2 bg-indigo-900 px-3 py-1.5 rounded-xl border border-indigo-500 shadow-sm">
-                        <span class="text-xs font-bold text-indigo-100"><i class="fa-solid fa-user-shield text-amber-400 mr-1"></i> 管理者画面</span>
-                        <button @click="showInstructorScheduleModal = true" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-2.5 py-1 rounded-lg transition shadow-xs flex items-center">
-                            <i class="fa-regular fa-calendar-alt mr-1 text-amber-300"></i> 指導者スケジュール設定
-                        </button>
-                        <button @click="isAdmin = false" class="text-xs bg-slate-700 hover:bg-slate-600 text-white font-bold px-2.5 py-1 rounded-lg transition shadow-xs flex items-center">
-                            <i class="fa-solid fa-right-from-bracket mr-1"></i> ログアウト
-                        </button>
-                    </div>
                 </div>
             </div>
         </header>
