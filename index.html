@@ -1079,9 +1079,13 @@
                 const activeMonth = ref(1);
                 const selectedStaffId = ref(1);
 
-                // Save & Sync State
-                const gasUrlInput = ref(localStorage.getItem('kusunoki_gas_url') || '');
-                const gasApiUrl = ref(localStorage.getItem('kusunoki_gas_url') || '');
+                // Save & Sync State (DEFAULT_GAS_URL for built-in mobile auto-sync)
+                const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbwDZWG19AT8IxcCXZmGysq-NhGoVbJbPD4qY5_M9Y_tTJkIO2DMkbfloJ6eDITkBuRW/exec';
+                const initialGasUrl = localStorage.getItem('kusunoki_gas_url') || DEFAULT_GAS_URL;
+                const gasUrlInput = ref(initialGasUrl);
+                const gasApiUrl = computed(() => {
+                    return gasUrlInput.value.trim() || DEFAULT_GAS_URL;
+                });
                 const saveStatus = ref('saved'); // 'saved', 'unsaved', 'saving', 'error'
                 const isSaving = ref(false);
                 const isLoading = ref(false);
@@ -1452,8 +1456,7 @@
 
 
                 const saveGasUrl = () => {
-                    gasApiUrl.value = gasUrlInput.value.trim();
-                    localStorage.setItem('kusunoki_gas_url', gasApiUrl.value);
+                    localStorage.setItem('kusunoki_gas_url', gasUrlInput.value.trim());
                     showConfigModal.value = false;
                     if (gasApiUrl.value) {
                         loadDataFromGAS();
