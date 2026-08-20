@@ -238,7 +238,7 @@
                                         <span class="font-bold text-amber-950 flex items-center">
                                             現在の重点課題（毎月の個別目標・強化テーマ）
                                         </span>
-                                        <button v-if="!isEditingFocusTopic" @click="startEditFocusTopic" 
+                                        <button v-if="isAdmin && !isEditingFocusTopic" @click="startEditFocusTopic" 
                                                 class="text-xs text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-lg border border-indigo-200 font-bold transition flex items-center shadow-2xs">
                                             <i class="fa-solid fa-pen-to-square mr-1 text-indigo-600"></i> 重点課題を編集
                                         </button>
@@ -250,7 +250,8 @@
                                             {{ currentFocusTopic }}
                                         </div>
                                         <div v-else class="text-slate-400 text-xs italic py-0.5">
-                                            （未設定：右上の「重点課題を編集」ボタンから、今月注力する課題や指導テーマを設定できます）
+                                            <span v-if="isAdmin">（未設定：右上の「重点課題を編集」ボタンまたは管理者画面から設定できます）</span>
+                                            <span v-else>（今月の重点課題は未設定です）</span>
                                         </div>
                                     </div>
 
@@ -649,6 +650,24 @@
                                                      activeMonth === m ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-200']">
                                         {{ m }}ヶ月目
                                     </button>
+                                </div>
+                            </div>
+
+                            <!-- Focus Topic Direct Editor in Admin Dashboard -->
+                            <div class="bg-amber-50/80 p-3.5 rounded-xl border border-amber-200/90 space-y-2 text-xs">
+                                <label class="font-bold text-amber-950 flex items-center justify-between">
+                                    <span class="flex items-center">
+                                        <i class="fa-solid fa-crosshairs text-amber-600 mr-1.5 text-sm"></i>
+                                        {{ activeMonth }}ヶ月目の重点課題（強化テーマ・個別目標）:
+                                    </span>
+                                    <span class="text-[10px] text-amber-800 font-normal">※管理者専用設定</span>
+                                </label>
+                                <div class="flex gap-2">
+                                    <input type="text" 
+                                           :value="currentFocusTopic" 
+                                           @input="updateFocusTopicForActiveMonth($event.target.value)" 
+                                           placeholder="今月重点的に指導・習得する課題を入力" 
+                                           class="flex-1 bg-white border border-amber-300 rounded-xl px-3 py-2 font-bold text-xs text-slate-800 focus:ring-2 focus:ring-amber-500 shadow-2xs">
                                 </div>
                             </div>
 
@@ -1312,6 +1331,17 @@
                     autoSaveDebounce();
                 };
 
+                const updateFocusTopicForActiveMonth = (val) => {
+                    if (!selectedStaffId.value) return;
+                    const key = `${selectedStaffId.value}_${activeMonth.value}`;
+                    if (val && val.trim()) {
+                        focusTopicsStore.value[key] = val;
+                    } else {
+                        delete focusTopicsStore.value[key];
+                    }
+                    autoSaveDebounce();
+                };
+
                 // Watch staff or month switch to reset edit mode & forms
                 watch([selectedStaffId, activeMonth], () => {
                     isEditingFocusTopic.value = false;
@@ -1947,7 +1977,8 @@
                     getMonthDates,
                     formattedToday,
                     scheduleActiveMonth,
-                    isEditingTodayInstructor
+                    isEditingTodayInstructor,
+                    updateFocusTopicForActiveMonth
                 };
             }
         }).mount('#app');
